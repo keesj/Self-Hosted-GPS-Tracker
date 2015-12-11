@@ -84,6 +84,16 @@ public class SelfHostedGPSTrackerPrefs extends PreferenceActivity {
                 return true;
             }
         });
+
+        pref = findPreference("pref_start_on_boot");
+        pref.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+            @Override
+            public boolean onPreferenceChange(Preference preference, Object newValue) {
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                boolean oldValue = preferences.getBoolean("pref_start_on_boot", false);
+                return true;
+            }
+        });
     }
 
     private void Alert(String message) {

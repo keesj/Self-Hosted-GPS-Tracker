@@ -21,4 +21,10 @@
         android:summary="@string/pref_timestamp_summary"
         android:defaultValue="false" />
 
+    <CheckBoxPreference
+        android:key="pref_start_on_boot"
+        android:title="@string/pref_start_on_boot"
+        android:summary="@string/pref_start_on_boot_sumarry"
+        android:defaultValue="false" />
+
 </PreferenceScreen>
