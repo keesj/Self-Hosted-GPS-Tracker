@@ -1,0 +1,116 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <title>Self Hosted GPS tracker: OpenLayers gpx display example</title>
+    <style type="text/css">
+      html, body, #basicMap {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+      }
+    </style>
+    <script src="OpenLayers.js"></script>
+    <script>
+    var markers;
+    var marker;
+    var map;
+    var zoom = 12;
+
+    function doRefresh() {
+        var xhr;
+        try {
+            xhr = new XMLHttpRequest();
+        } catch (e) {
+            xhr = false;
+        }
+
+        xhr.onreadystatechange = function() {
+	    /* this function is mainly concered with displaying the marker */
+            if (xhr.readyState == 4) {
+                if (xhr.status == 200) {
+                    var param = xhr.responseText.split('_');
+                    dte = param[0];
+                    lat = param[1];
+                    lon = param[2];
+                    utc = param[3];
+                    if (dte && lat && lon) {
+                        var position = new OpenLayers.LonLat(lon, lat)
+                            .transform(
+                                new OpenLayers.Projection("EPSG:4326"),
+                                new OpenLayers.Projection("EPSG:900913")
+                            );
+
+                        if (marker) {
+                            /* if the marker already exists we need to remove it this is how to move
+                                   markers in OpenLayers */
+                            markers.removeMarker(marker);
+                        } else {
+                            /* the first time set the current position at the center of the map */
+                            map.setCenter(position, zoom);
+                        }
+                        var size = new OpenLayers.Size(21, 25);
+                        var offset = new OpenLayers.Pixel(-(size.w / 2), -size.h);
+                        var icon = new OpenLayers.Icon('img/marker.png', size, offset);
+                        marker = new OpenLayers.Marker(position, icon);
+                        markers.addMarker(marker);
+                    }
+                }
+            }
+        };
+        xhr.open("GET", "where.html?" + Math.random(), true);
+        xhr.send(null);
+        setTimeout('doRefresh()', 30000);
+    }
+
+    function init() {
+        var options = {
+            controls: [
+                new OpenLayers.Control.Navigation(),
+                new OpenLayers.Control.Attribution(),
+                new OpenLayers.Control.PanZoomBar()
+            ]
+        };
+        map = new OpenLayers.Map("basicMap", options);
+        var mapnik = new OpenLayers.Layer.OSM();
+        var fromProjection = new OpenLayers.Projection("EPSG:4326"); // Transform from WGS 1984
+        var toProjection = new OpenLayers.Projection("EPSG:900913"); // to Spherical Mercator Projection
+        var position = new OpenLayers.LonLat(4.92, 52.38).transform(fromProjection, toProjection);
+        var zoom = 12;
+
+
+        map.addLayer(mapnik);
+        map.setCenter(position, zoom);
+
+        var refresh = new OpenLayers.Strategy.Refresh({
+            ctive: true,
+            interval: 60000
+        }); /* 60 seconds */
+
+        // Add the Layer with the GPX Track and allow autorefresh
+        var lgpx = new OpenLayers.Layer.Vector("GPS trace", {
+            strategies: [new OpenLayers.Strategy.Fixed(), refresh],
+            protocol: new OpenLayers.Protocol.HTTP({
+                url: "trace.gpx",
+                format: new OpenLayers.Format.GPX()
+            }),
+
+            style: {
+                strokeColor: "blue",
+                strokeWidth: 5,
+                strokeOpacity: 0.5
+            },
+            projection: new OpenLayers.Projection("EPSG:4326")
+        });
+        map.addLayer(lgpx);
+
+        markers = new OpenLayers.Layer.Markers("Markers");
+        map.addLayer(markers);
+
+        doRefresh(); /* initial call to make the phone icon move around */
+    }
+    </script>
+  </head>
+  <body onload="init();">
+    <div id="basicMap"></div>
+  </body>
+</html>
